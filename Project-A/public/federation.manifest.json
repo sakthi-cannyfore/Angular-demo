@@ -1,0 +1,4 @@
+{
+  "project-b": "http://localhost:4201/remoteEntry.json",
+  "project-c": "http://localhost:4202/remoteEntry.json"
+}

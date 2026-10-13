@@ -1,0 +1,21 @@
+header, main {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+h1 {
+  margin-top: 0;
+}
+
+.counter-summary {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  background: white;
+}
+
+.counter-summary h2 {
+  margin-top: 0;
+}

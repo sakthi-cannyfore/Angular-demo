@@ -1,0 +1,17 @@
+<header>
+  <h1>Project A</h1>
+</header>
+
+<main>
+  <section class="counter-summary" aria-label="Live counter values">
+    <h2>Live counters</h2>
+    <p aria-live="polite">Project B: <strong>{{ counters.connected() ? counters.countB() : '—' }}</strong></p>
+    <p aria-live="polite">Project C: <strong>{{ counters.connected() ? counters.countC() : '—' }}</strong></p>
+    @if (counters.error()) {
+      <p role="alert">{{ counters.error() }}</p>
+    } @else if (!counters.connected()) {
+      <p>Connecting to counter service…</p>
+    }
+  </section>
+  <router-outlet />
+</main>

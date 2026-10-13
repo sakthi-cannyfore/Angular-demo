@@ -1,0 +1,14 @@
+<section>
+  <h2>Project C counter</h2>
+  <p class="count" aria-live="polite">{{ counters.connected() ? count() : '—' }}</p>
+  <div class="buttons">
+    <button type="button" (click)="decrement()" [disabled]="!counters.connected() || counters.pending()" aria-label="Decrease count">−</button>
+    <button type="button" (click)="reset()" [disabled]="!counters.connected() || counters.pending()">Reset</button>
+    <button type="button" (click)="increment()" [disabled]="!counters.connected() || counters.pending()" aria-label="Increase count">+</button>
+  </div>
+  @if (counters.error()) {
+    <p role="alert">{{ counters.error() }}</p>
+  } @else if (!counters.connected()) {
+    <p>Connecting to counter service…</p>
+  }
+</section>

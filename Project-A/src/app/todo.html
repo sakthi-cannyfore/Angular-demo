@@ -1,0 +1,25 @@
+<section>
+  <h2>Todo list</h2>
+
+  <form (ngSubmit)="addTask()">
+    <label for="new-task">New task</label>
+    <div class="task-input">
+      <input id="new-task" name="newTask" [(ngModel)]="newTask" placeholder="Enter a task" />
+      <button type="submit" [disabled]="!newTask.trim()">Add</button>
+    </div>
+  </form>
+
+  <ul>
+    @for (task of tasks; track task.id) {
+      <li>
+        <label class="task">
+          <input type="checkbox" [checked]="task.completed" (change)="toggleTask(task)" />
+          <span [class.completed]="task.completed">{{ task.text }}</span>
+        </label>
+        <button type="button" (click)="removeTask(task.id)" [attr.aria-label]="'Delete ' + task.text">Delete</button>
+      </li>
+    } @empty {
+      <li>No tasks yet. Add your first task above.</li>
+    }
+  </ul>
+</section>

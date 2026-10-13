@@ -1,0 +1,39 @@
+.task-input, li, .task {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.task-input {
+  margin-top: 8px;
+}
+
+.task-input input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.task {
+  min-width: 0;
+}
+
+.task span {
+  overflow-wrap: anywhere;
+}
+
+.completed {
+  text-decoration: line-through;
+  color: #6b7280;
+}
