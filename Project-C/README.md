@@ -1,144 +1,70 @@
-# Project C: Live counter micro frontend
+# Project C: counter frontend
 
-Project C displays and changes counter C. It runs as a standalone Angular app
-and exposes its counter component for Project A to load through native federation.
+Project C runs at http://localhost:4202. It displays its own counter with Decrease, Reset, and Increase buttons. There is no navigation menu.
 
-Read the [complete application guide](../README.md) for all three projects,
-the shared service, API, and live data flow.
+The implementation belongs to Project A. This project loads A's state through Native Federation. Read the [workspace README](../README.md) for complete setup, architecture, and synchronization details.
 
-## Run this project
+## Run
 
-From this folder:
+From this project directory:
 
 ```powershell
-npm install
+npm ci
 npm start
 ```
 
-Open [localhost:4202](http://localhost:4202/).
-Also start the counter server with `npm start` in `../counter-server`.
+Build with `npm run build`. Start Project A on port 4200 before opening this page.
 
-Project A is not required to use this standalone counter. To see updates reflected
-in A, start A and open [localhost:4200](http://localhost:4200/) too.
+## Independent startup flow
 
-## Counter functionality
+1. `src/main.ts` initializes federation and dynamically imports bootstrap.
+2. `bootstrap.ts` starts App using `app.config.ts`.
+3. `App.ngOnInit()` checks for A's state on the current window.
+4. In a standalone tab it loads `./CounterState` from A's remoteEntry.json.
+5. It calls the remote module's `getCounterState()` and saves the returned object in its counters signal.
+6. The state creates an A-origin iframe and requests the stored B/C values.
+7. The template reads `state.countC()` once connected.
 
-| Button | Component method | Service action | Server result |
-| --- | --- | --- | --- |
-| + | `increment()` | `update('c', 'increment')` | Add one to C |
-| − | `decrement()` | `update('c', 'decrement')` | Subtract one from C |
-| Reset | `reset()` | `update('c', 'reset')` | Set C to zero |
+The local counter-state.ts contains only a TypeScript interface. Its imports are type-only. It does not implement storage or calculate the count.
 
-Negative values are allowed. There is no custom step-size control.
-Changing C does not change counter B.
+## Button flow
 
-## How the component works
+| Button | Method | Forwarded call |
+| --- | --- | --- |
+| Increase | increment() | update('c', 'increment') |
+| Decrease | decrement() | update('c', 'decrement') |
+| Reset | reset() | update('c', 'reset') |
 
-The component uses Angular dependency injection:
+The component forwards each action to A's loaded state object. The state sends a message to the hidden bridge. The bridge validates it, obtains a Web Lock, reads the latest pair from A's localStorage, changes C's count, and writes the pair.
 
-```typescript
-counters = inject(COUNTER_SERVICE);
-count = this.counters.countC;
-```
+It replies to its parent immediately. Other A-origin bridges receive browser storage events and forward the current values to their parents. Signals refresh the visible counts, including A's live summary.
 
-`count` references the shared service's signal. Reading `count()` in the
-template returns the current value. It is not a separate local copy.
+Reset changes only C. Negative values are allowed. Reloading restores the browser's saved value.
 
-The button methods call the asynchronous service action:
+## Running inside A
 
-```typescript
-increment() {
-  void this.counters.update('c', 'increment');
-}
-```
+This project exposes `./Counter` from src/app/app.ts. A loads that component on its direct `/counter-c` route.
 
-The other methods use their corresponding action names.
-`void` means the component does not consume the promise result.
-The service handles errors and the live event stream supplies updated values.
+The component then executes in A's window. Initialization finds window.projectACounterState and reuses it immediately. No second state object or iframe is created in that window. The embedded counter and A's summary therefore read the same signals.
 
-## Follow a button click
+## Loading and errors
 
-1. The button's `(click)` binding invokes its component method.
-2. The shared service POSTs the action to `/counters/c` on port 4300.
-3. The server updates counter C and broadcasts both counts.
-4. This component receives the snapshot through the service's live stream.
-5. Its signal changes and Angular renders the new value.
-6. Project A receives the same snapshot and updates its C summary.
+Before remote state arrives, the template shows a loading message. A failed load displays an instruction to start A and reload.
 
-The browser does not calculate an optimistic local value.
-Both the sender and other clients display values broadcast by the server.
+Once loaded, the count shows a dash until connected. Buttons are disabled while disconnected or pending. Connection, timeout, and storage errors come from A's state. Count updates use an aria-live region and errors use alert semantics.
 
-## Connection states
-
-Before the first snapshot, the component displays a dash and a connecting message.
-If the stream reports an error, it displays a dash and an offline message.
-
-Buttons are disabled while `connected()` is false or `pending()` is true.
-A failed action shows an error. The live stream automatically attempts to reconnect;
-a successful snapshot restores the display.
-
-Values use `aria-live="polite"`. Error messages use `role="alert"`,
-and the increment/decrement buttons have descriptive accessible labels.
-
-## Standalone startup
-
-`src/main.ts` initializes federation and then loads `bootstrap.ts`.
-The bootstrap starts `App` using `appConfig`.
-The root HTML element is `<app-counter-c>`.
-This standalone counter has no router configuration.
-
-## How Project A loads this counter
-
-[federation.config.js](federation.config.js) names the remote `project-c`
-and exposes:
-
-```javascript
-exposes: {
-  './Counter': './src/app/app.ts',
-}
-```
-
-A's manifest points to `http://localhost:4202/remoteEntry.json`.
-A's `/counter-c` route loads the exposed `App` component.
-
-There is no navigation link in A, but you can type
-`http://localhost:4200/counter-c` to view this counter inside A.
-
-All projects share `@demo/shared-counter` as a federation singleton.
-Inside A, this component reuses A's root counter service.
-In a separate tab, it has its own service instance connected to the same API.
-
-## Important files
+## Main files
 
 | File | Responsibility |
 | --- | --- |
-| [src/app/app.ts](src/app/app.ts) | Signal reference and three action methods |
-| [src/app/app.html](src/app/app.html) | Display, buttons, connection state, and errors |
-| [src/app/app.css](src/app/app.css) | Basic counter-card styling |
-| [src/main.ts](src/main.ts) | Federation initialization |
-| [src/bootstrap.ts](src/bootstrap.ts) | Angular startup |
-| [src/app/app.config.ts](src/app/app.config.ts) | Browser error listeners |
-| [src/index.html](src/index.html) | Standalone root element |
-| [federation.config.js](federation.config.js) | Exposed component and shared dependencies |
-| [../shared-counter/index.js](../shared-counter/index.js) | Shared signals and communication |
-| [../counter-server/server.js](../counter-server/server.js) | Real values and broadcasts |
+| src/main.ts | Federation initialization |
+| src/bootstrap.ts, src/app/app.config.ts | Angular startup and providers |
+| src/app/app.ts | Load/reuse A's state and forward actions |
+| src/app/app.html | Count, buttons, loading, and errors |
+| src/app/app.css | Presentation |
+| src/app/counter-state.ts | Type-only public-state interface |
+| federation.config.js | Expose Counter and share dependencies |
+| angular.json | Development port and build configuration |
 
-## Data lifetime
+Use localhost consistently in the same browser profile, with browser storage enabled. Different profiles or computers do not share counts. For deployment changes, follow the coordinated origin and remote URL changes in the workspace README.
 
-Reloading this browser or opening a new tab receives the server's existing values.
-Restarting the counter server resets both counters to zero.
-All clients connected to that server share the same two counters.
-
-## Build and test
-
-From this folder:
-
-```powershell
-npm run build
-npm test -- --watch=false
-```
-
-The component test verifies action keys, incoming signal values, independence from
-counter B, and disabled controls while offline.
-The [server integration test](../counter-server/server.spec.js) checks actual HTTP
-requests and broadcasts to multiple clients.

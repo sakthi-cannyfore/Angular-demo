@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { COUNTER_SERVICE } from '@demo/shared-counter';
+import { getCounterState } from './counter-state';
 
 @Component({
   selector: 'app-root',
@@ -9,5 +9,5 @@ import { COUNTER_SERVICE } from '@demo/shared-counter';
   templateUrl: './app.html',
 })
 export class App {
-  counters = inject(COUNTER_SERVICE);
+  counters = getCounterState();
 }

@@ -1,122 +1,82 @@
-# Project A: Todo list and live counter summary
+# Project A: todo host and frontend counter state
 
-Project A is the host application, also called the shell. It displays local todos
-and the live values of counter B and counter C. It can also load B and C's
-components through native federation.
+Project A runs at http://localhost:4200. It displays a todo list and the current B/C counts. It owns the counter implementation exposed through Native Federation and the browser storage bridge.
 
-Read the [complete application guide](../README.md) for the architecture,
-shared service, API, configuration, and troubleshooting.
+Read the [workspace README](../README.md) for the full architecture, setup, update sequence, and troubleshooting.
 
-## Run Project A
+## Run
 
-From this folder:
+From this project directory:
 
 ```powershell
-npm install
+npm ci
 npm start
 ```
 
-Open [localhost:4200](http://localhost:4200/).
-For the full demo, also start the counter server and Projects B and C.
-All four startup commands are in the [root guide](../README.md#2-installation-and-startup).
+Build with `npm run build`. Start B on port 4201 and C on port 4202 to use their independent screens or A's remote counter routes.
 
-## Home-page features
+## Startup flow
 
-| Feature | Behavior |
-| --- | --- |
-| Add task | Enter text and click Add or press Enter |
-| Ignore blank tasks | Spaces are trimmed; empty text is not added |
-| Complete/uncomplete task | Toggle its checkbox; completed text is crossed out |
-| Delete task | Delete removes only the selected task ID |
-| Empty state | A message appears when the task list is empty |
-| B/C summary | Shows values received from the counter server |
-| Loading/offline state | Shows a dash until connected and a message for connection errors |
+1. `src/main.ts` initializes federation using `public/federation.manifest.json`.
+2. Main dynamically imports `bootstrap.ts`, which starts App with `app.config.ts`.
+3. App calls `getCounterState()` and keeps the returned object for the live summary.
+4. That function caches one state object on the current window.
+5. The constructor creates an A-origin hidden iframe and requests the saved pair of counts.
+6. The reply updates Angular signals, and the summary template displays the values.
+7. The router displays Todo at the home URL.
 
-The navigation links have been removed.
+## Todo functionality
 
-## Todo component, step by step
+`todo.ts` stores the input and task list in component memory. Each item has an ID, text, and completed flag.
 
-The component keeps `newTask`, a `tasks` array, and a `nextId` counter.
-Each task has `id`, `text`, and `completed` properties.
+- `addTask()` trims input, ignores blanks, adds an incomplete item with a new ID, and clears the input.
+- `toggleTask(task)` reverses the completed flag.
+- `removeTask(id)` filters out the selected item.
 
-| Method | Steps |
-| --- | --- |
-| `addTask()` | Trim the input; return if blank; push a new incomplete task; increment its ID; clear input |
-| `toggleTask(task)` | Reverse the task's boolean completion value |
-| `removeTask(id)` | Filter out the matching task ID |
+`todo.html` uses FormsModule for two-way input binding. Form submission adds an item, checkbox changes toggle completion, and Delete removes an item. A tracked loop renders tasks, an empty branch shows the empty-list message, and a CSS class styles completed tasks.
 
-The template uses `[(ngModel)]` to connect input text, `(ngSubmit)` to add tasks,
-and `@for (...; track task.id)` to render the list.
-Checkbox changes call `toggleTask()`. Delete calls `removeTask()`.
-The completed CSS class strikes through completed text.
+The list clears on reload or when the todo component is recreated. Counter updates do not modify it.
 
-Todo data stays in this component's memory. Reloading the browser or leaving this
-component clears the tasks. Todo actions do not call the API and do not affect counters.
+## Counter functionality
 
-## Live counter summary
+A's `counter-state.ts` exports `getCounterState()` and CounterState. Its signals contain B/C values, connection status, pending status, and an error message.
 
-The root component injects `COUNTER_SERVICE` from `@demo/shared-counter`.
-It reads the `countB`, `countC`, `connected`, and `error` signals.
+`update()` validates connection readiness and sends an action. `send()` posts to the bridge. `receive()` validates replies and updates signals. `waitForReply()` handles a 10-second timeout. The root shows a dash until connected, followed by the saved count values.
 
-Signals are reactive values: when the service changes them, Angular updates
-the HTML. The summary belongs to the root component outside the router outlet,
-so it stays visible across page changes.
+The window cache lets embedded B/C components use the same state and iframe as A's root. Independent tabs load the implementation from A but create their own state objects.
 
-Project A does not change counts from its summary. B and C send actions to the
-common counter API; A receives the resulting live snapshots.
+## Browser bridge flow
+
+`counter-bridge.html` loads `counter-bridge.js`. All bridge instances execute on A's origin, so they access the same localStorage entry, `project-a-counters`.
+
+The bridge validates messages, locks the update with Web Locks, reads the latest pair, changes the selected value, and saves both counts. It replies directly to its parent. Other bridge frames receive storage events and forward the latest pair to their own parents. Angular signals then refresh their displays.
+
+Counts persist in browser storage across reloads. Use the same browser profile and localhost hostname with storage enabled. The bridge is frontend code and does not call a counter API.
 
 ## Routes and federation
 
-| URL | Component |
+| URL | Content |
 | --- | --- |
-| `/` | Local todo component |
-| `/counter-b` | B's exposed counter |
-| `/counter-c` | C's exposed counter |
-| Any unknown path | Redirect to `/` |
+| `/` | Todo list |
+| `/counter-b` | B's exposed Counter component |
+| `/counter-c` | C's exposed Counter component |
+| Unknown route | Redirect home |
 
-Although there are no navigation links, the remote routes still work by URL.
+No navigation menu is rendered. The summary remains visible on the direct remote routes.
 
-`main.ts` first initializes federation with `federation.manifest.json`,
-then imports `bootstrap.ts` to start Angular.
-The manifest maps `project-b` and `project-c` to ports 4201 and 4202.
+A exposes `./CounterState`. Its manifest discovers B/C, and the route file loads their `./Counter` modules when needed. Federation loads code; the bridge synchronizes cross-tab data.
 
-On a remote route, `loadRemoteModule(remoteName, './Counter')` loads the
-remote's exported `App` component. The router puts it in `<router-outlet />`.
+## Main files to read
 
-A's federation configuration shares `@demo/shared-counter` as a singleton.
-An embedded counter obtains the same root service used by A's summary.
-A counter open in a separate tab has a different instance and receives
-the same values through the API.
-
-## Important files
-
-| File | Responsibility |
+| File | Purpose |
 | --- | --- |
-| [src/app/app.ts](src/app/app.ts) | Root shared-service injection |
-| [src/app/app.html](src/app/app.html) | Heading, live summary, and router outlet |
-| [src/app/todo.ts](src/app/todo.ts) | Todo data and methods |
-| [src/app/todo.html](src/app/todo.html) | Form and task list |
-| [src/app/app.routes.ts](src/app/app.routes.ts) | Local and remote routes |
-| [src/app/app.config.ts](src/app/app.config.ts) | Router and error-listener providers |
-| [src/main.ts](src/main.ts) | Initialize federation |
-| [src/bootstrap.ts](src/bootstrap.ts) | Start the Angular root component |
-| [public/federation.manifest.json](public/federation.manifest.json) | Remote URLs |
-| [federation.config.js](federation.config.js) | Shared-package configuration |
+| `src/main.ts`, `src/bootstrap.ts` | Federation initialization and Angular startup |
+| `src/app/app.config.ts`, `app.routes.ts` | Providers and routes |
+| `src/app/app.ts`, `app.html` | Summary and router outlet |
+| `src/app/todo.ts`, `todo.html` | Todo interactions |
+| `src/app/counter-state.ts` | Federated counter state |
+| `public/counter-bridge.html`, `counter-bridge.js` | Browser storage and messaging |
+| `federation.config.js` | Exposed state and dependency sharing |
+| `public/federation.manifest.json` | B/C remote entry URLs |
 
-## Data lifetime
-
-The server keeps counters in process memory. Reloading A receives the existing
-values again; changing routes preserves them. Restarting the server resets both
-counters. Todos are separate local component data.
-
-## Build and test
-
-From this folder:
-
-```powershell
-npm run build
-npm test -- --watch=false
-```
-
-A's tests cover live summary changes, offline display, todo operations,
-and the shared service's event and request behavior.
+Deployment to different origins requires coordinated changes to the remote URLs, bridge origin, and allowed origins described in the workspace README.

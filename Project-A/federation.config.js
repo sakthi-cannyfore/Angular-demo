@@ -2,16 +2,19 @@ const { withNativeFederation, shareAll } = require('@angular-architects/native-f
 
 module.exports = withNativeFederation({
   name: 'project-a',
+  features: {
+    ignoreUnusedDeps: false,
+  },
+  exposes: {
+    './CounterState': './src/app/counter-state.ts',
+  },
   shared: {
     ...shareAll({ singleton: true, strictVersion: true, requiredVersion: 'auto' }),
-    '@demo/shared-counter': {
-      singleton: true,
-      strictVersion: true,
-      requiredVersion: '1.0.0',
-    },
   },
 
   skip: [
+    '@angular/platform-browser/animations',
+    '@angular/platform-browser/animations/async',
     'rxjs/ajax',
     'rxjs/fetch',
     'rxjs/testing',

@@ -1,24 +1,42 @@
-import { Component, inject } from '@angular/core';
-import { COUNTER_SERVICE } from '@demo/shared-counter';
+import { Component, OnInit, signal } from '@angular/core';
+import { loadRemoteModule } from '@angular-architects/native-federation';
+import type { CounterState } from './counter-state';
 
 @Component({
   selector: 'app-counter-b',
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App {
-  counters = inject(COUNTER_SERVICE);
-  count = this.counters.countB;
+export class App implements OnInit {
+  counters = signal<CounterState | null>(null);
+  error = signal('');
+
+  async ngOnInit() {
+    const hostState = (window as Window & { projectACounterState?: CounterState }).projectACounterState;
+    if (hostState) {
+      this.counters.set(hostState);
+      return;
+    }
+    try {
+      const module = await loadRemoteModule({
+        remoteEntry: 'http://localhost:4200/remoteEntry.json',
+        exposedModule: './CounterState',
+      });
+      this.counters.set(module.getCounterState());
+    } catch {
+      this.error.set('Could not load counter state. Start Project A on port 4200 and reload.');
+    }
+  }
 
   increment() {
-    void this.counters.update('b', 'increment');
+    this.counters()?.update('b', 'increment');
   }
 
   decrement() {
-    void this.counters.update('b', 'decrement');
+    this.counters()?.update('b', 'decrement');
   }
 
   reset() {
-    void this.counters.update('b', 'reset');
+    this.counters()?.update('b', 'reset');
   }
 }
