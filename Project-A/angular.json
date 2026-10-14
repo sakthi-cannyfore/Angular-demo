@@ -4,14 +4,11 @@
   "cli": {
     "packageManager": "npm"
   },
-  "newProjectRoot": "projects",
   "projects": {
     "Project-A": {
       "projectType": "application",
-      "schematics": {},
       "root": "",
       "sourceRoot": "src",
-      "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular-architects/native-federation:build",
