@@ -1,4 +1,6 @@
-.task-input, li, .task {
+.task-input,
+li,
+.task {
   display: flex;
   align-items: center;
   gap: 12px;

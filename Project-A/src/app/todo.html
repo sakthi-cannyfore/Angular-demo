@@ -11,15 +11,15 @@
 
   <ul>
     @for (task of tasks; track task.id) {
-      <li>
-        <label class="task">
-          <input type="checkbox" [checked]="task.completed" (change)="toggleTask(task)" />
-          <span [class.completed]="task.completed">{{ task.text }}</span>
-        </label>
-        <button type="button" (click)="removeTask(task.id)" [attr.aria-label]="'Delete ' + task.text">Delete</button>
-      </li>
+    <li>
+      <label class="task">
+        <input type="checkbox" [checked]="task.completed" (change)="toggleTask(task)" />
+        <span [class.completed]="task.completed">{{ task.text }}</span>
+      </label>
+      <button type="button" (click)="removeTask(task.id)" [attr.aria-label]="'Delete ' + task.text">Delete</button>
+    </li>
     } @empty {
-      <li>No tasks yet. Add your first task above.</li>
+    <li>No tasks yet. Add your first task above.</li>
     }
   </ul>
 </section>

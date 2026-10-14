@@ -8,9 +8,9 @@
     <p aria-live="polite">Project B: <strong>{{ counters.connected() ? counters.countB() : '—' }}</strong></p>
     <p aria-live="polite">Project C: <strong>{{ counters.connected() ? counters.countC() : '—' }}</strong></p>
     @if (counters.error()) {
-      <p role="alert">{{ counters.error() }}</p>
+    <p role="alert">{{ counters.error() }}</p>
     } @else if (!counters.connected()) {
-      <p>Connecting to Project A counter state…</p>
+    <p>Connecting to Project A counter state…</p>
     }
   </section>
   <router-outlet />

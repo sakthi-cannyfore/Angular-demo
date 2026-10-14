@@ -1,20 +1,22 @@
 <section>
   <h2>Project B counter</h2>
   @if (counters(); as state) {
-    <p class="count" aria-live="polite">{{ state.connected() ? state.countB() : '—' }}</p>
-    <div class="buttons">
-      <button type="button" (click)="decrement()" [disabled]="!state.connected() || state.pending()" aria-label="Decrease count">−</button>
-      <button type="button" (click)="reset()" [disabled]="!state.connected() || state.pending()">Reset</button>
-      <button type="button" (click)="increment()" [disabled]="!state.connected() || state.pending()" aria-label="Increase count">+</button>
-    </div>
-    @if (state.error()) {
-      <p role="alert">{{ state.error() }}</p>
-    } @else if (!state.connected()) {
-      <p>Connecting to Project A…</p>
-    }
+  <p class="count" aria-live="polite">{{ state.connected() ? state.countB() : '—' }}</p>
+  <div class="buttons">
+    <button type="button" (click)="decrement()" [disabled]="!state.connected() || state.pending()"
+      aria-label="Decrease count">−</button>
+    <button type="button" (click)="reset()" [disabled]="!state.connected() || state.pending()">Reset</button>
+    <button type="button" (click)="increment()" [disabled]="!state.connected() || state.pending()"
+      aria-label="Increase count">+</button>
+  </div>
+  @if (state.error()) {
+  <p role="alert">{{ state.error() }}</p>
+  } @else if (!state.connected()) {
+  <p>Connecting to Project A…</p>
+  }
   } @else if (error()) {
-    <p role="alert">{{ error() }}</p>
+  <p role="alert">{{ error() }}</p>
   } @else {
-    <p>Loading Project A counter state…</p>
+  <p>Loading Project A counter state…</p>
   }
 </section>

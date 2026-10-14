@@ -6,7 +6,8 @@ body {
   background: #f9fafb;
 }
 
-input, button {
+input,
+button {
   font: inherit;
 }
 
